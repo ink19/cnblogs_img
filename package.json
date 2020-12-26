@@ -1,6 +1,6 @@
 {
-  "name": "cnblog-img",
-  "displayName": "cnblog-img",
+  "name": "cnblogs-img",
+  "displayName": "cnblogs-img",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -16,16 +16,20 @@
   "contributes": {
     "commands": [
       {
-        "command": "cnblog-img.login_test",
+        "command": "cnblogs-img.login_test",
         "title": "Login Test"
       },
       {
-        "command": "cnblog-img.upload-from-context",
+        "command": "cnblogs-img.upload-from-context",
         "title": "upload cnblogs"
       },
       {
-        "command": "cnblog-img.just-for-test",
+        "command": "cnblogs-img.just-for-test",
         "title": "Just For Test"
+      },
+      {
+        "command": "cnblogs-img.replace-markdown",
+        "title": "Replace Markdown"
       }
     ],
     "configuration": {
@@ -47,7 +51,7 @@
       "explorer/context": [
         {
           "when": "resourceExtname == .jpg||  resourceExtname == .gif || resourceExtname == .png",
-          "command": "cnblog-img.upload-from-context",
+          "command": "cnblogs-img.upload-from-context",
           "group": "1_modification"
         }
       ]

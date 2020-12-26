@@ -8,6 +8,17 @@ import { checkout } from 'superagent';
 let cnblogs_cookie_apsnetcore:string = "";
 let cnblogs_cookie_CNBlogsCookie:string = "";
 
+const regexp = /(?<=\!\[(([^\n\]]|(?<=\\).)*)\]\()((?:[^\)]|(?<=\\).)*)(?=\))/g;
+
+function get_work_space(ipath : string) {
+	let vsc_workspace = vscode.workspace.workspaceFolders;
+	if (vsc_workspace == undefined || vsc_workspace.length == 0) {
+		return path.dirname(ipath);
+	} else {
+		return vsc_workspace[0].uri.path;
+	}
+}
+
 function get_cookie() {
 	let configure = vscode.workspace.getConfiguration();
 	cnblogs_cookie_apsnetcore = configure["cnblogs"]["cookie"]['AspNetCore'];
@@ -37,15 +48,15 @@ async function upload_img(image_path : string) {
 	}
 }
 
-async function upload_single_img(image_path: string, work_space: string, cache : any) {
+async function upload_single_img(image_path: string, absolute_to_path: string, cache : any) {
 	let file_relative_path = "";
 	let file_absolute_path = "";
 	if (path.isAbsolute(image_path)) {
-		file_relative_path = path.relative(work_space, image_path);
+		file_relative_path = path.relative(absolute_to_path, image_path);
 		file_absolute_path = image_path;
 	} else {
 		file_relative_path = image_path;
-		file_absolute_path = path.resolve(work_space, image_path);
+		file_absolute_path = path.resolve(absolute_to_path, image_path);
 	}
 	file_relative_path = path.normalize(file_relative_path);
 	console.log("绝对路径～ " + file_absolute_path);
@@ -66,7 +77,7 @@ async function upload_single_img(image_path: string, work_space: string, cache :
 	}
 }
 
-async function upload_many_img(images_path : string[], work_space : string) {
+async function upload_many_img(images_path : string[], work_space : string, absolute_to_path: string) {
 	let cache_path = work_space + "/cnblog_img.json";
 	let cache_obj = {}
 	if (fs.existsSync(cache_path)) {
@@ -78,20 +89,35 @@ async function upload_many_img(images_path : string[], work_space : string) {
 
 	let image_uri = await Promise.all(images_path.map(async (value) => {
 		console.log("正在上传文件~ " + value);
-		return await upload_single_img(value, work_space, cache_obj);
+		return await upload_single_img(value, absolute_to_path, cache_obj);
 	}));
 	console.log(cache_obj);
 	fs.writeFileSync(cache_path, JSON.stringify(cache_obj));
 	return image_uri;
 }
 
-function get_work_space(ipath : string) {
-	let vsc_workspace = vscode.workspace.workspaceFolders;
-	if (vsc_workspace == undefined || vsc_workspace.length == 0) {
-		return path.dirname(ipath);
-	} else {
-		return vsc_workspace[0].uri.path;
-	}
+function get_images_from_md(md_data: string) : string[] {
+	let match_result = md_data.match(regexp);
+	return match_result == undefined?[]:match_result.map((value) => value.toString());
+}
+
+function replace_images_in_md(md_data: string, images_map: { [k: string]: string }) {
+	let result2 = md_data.replace(regexp, (substring) => {
+		return images_map[substring]
+	});
+	return result2;
+}
+
+async function replace_images_from_md(md_data_path: string) {
+	let md_data = fs.readFileSync(md_data_path).toString();
+	let images_path = get_images_from_md(md_data);
+	let images_uri = await upload_many_img(images_path, path.dirname(md_data_path), get_work_space(md_data_path));
+	let images_map :{ [k: string]: string } = {}
+	images_path.forEach((value, index) => {
+		images_map[value] = images_uri[index]
+	});
+	let replaced_md_data = replace_images_in_md(md_data, images_map);
+	fs.writeFileSync(path.dirname(md_data_path) + "/replaced." + path.basename(md_data_path), replaced_md_data);
 }
 
 function test_login() {
@@ -109,14 +135,14 @@ function test_login() {
 
 export function activate(context: vscode.ExtensionContext) {
 
-	console.log('Congratulations, your extension "cnblog-img" is now active!');
+	console.log('Congratulations, your extension "cnblogs-img" is now active!');
 
-	let disposable = vscode.commands.registerCommand('cnblog-img.login_test', () => {
+	let disposable = vscode.commands.registerCommand('cnblogs-img.login_test', () => {
 		get_cookie();
 		test_login();
 	});
 
-	let upload_from_context = vscode.commands.registerCommand('cnblog-img.upload-from-context', async (fileUri:vscode.Uri) => {
+	let upload_from_context = vscode.commands.registerCommand('cnblogs-img.upload-from-context', async (fileUri:vscode.Uri) => {
 		console.log("upload-from-context");
 		if (!fileUri) {
 			vscode.window.showErrorMessage("Can't find the file");
@@ -124,10 +150,9 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		get_cookie();
 		
-
 		let work_space = get_work_space(fileUri.path);
 		console.log("获取到工作目录啦～ " + work_space);
-		let image_uri = await upload_many_img([fileUri.path], work_space);
+		let image_uri = await upload_many_img([fileUri.path], work_space, work_space);
 		console.log("已经上传文件啦～");
 		clipboardy.writeSync(await image_uri[0]);
 		vscode.window.showInformationMessage("已将URL复制到剪切板～");
@@ -135,14 +160,40 @@ export function activate(context: vscode.ExtensionContext) {
 		//upload_img(fileUri.path);
 	});
 
-	let test_commend = vscode.commands.registerCommand('cnblog-img.just-for-test', () => {
+	let replace_md = vscode.commands.registerCommand('cnblogs-img.replace-markdown', (fileuri:vscode.Uri|undefined) => {
+		try {
+			let filepath = "";
+			if (fileuri == undefined) {
+				if (vscode.window.activeTextEditor) {
+					filepath = vscode.window.activeTextEditor.document.uri.path;
+				} else {
+					vscode.window.showErrorMessage("没有找到可以替换的文件～");
+					return;
+				}
+			} else {
+				filepath = fileuri.path;
+			}
+
+			if (path.extname(filepath) != ".md") {
+				vscode.window.showErrorMessage("这个文件不是Markdown文档～");
+				return;
+			}
+
+			replace_images_from_md(filepath);
+		} catch (error) {
+			console.log(error)
+		}
+	});
+
+	let test_commend = vscode.commands.registerCommand('cnblogs-img.just-for-test', () => {
 		console.log(vscode.workspace.workspaceFolders);
-	})
+	});
 
 	// 自动删除
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(upload_from_context);
 	context.subscriptions.push(test_commend);
+	context.subscriptions.push(replace_md);
 }
 
 export function deactivate() {}
