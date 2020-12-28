@@ -111,6 +111,12 @@ function replace_images_in_md(md_data: string, images_map: { [k: string]: string
 async function replace_images_from_md(md_data_path: string) {
 	let md_data = fs.readFileSync(md_data_path).toString();
 	let images_path = get_images_from_md(md_data);
+	let test_reg = /^(ht|f)tp(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%$#_]*)?$/
+	images_path = images_path.filter(ipath => {
+		return !test_reg.test(ipath)
+	});
+	//console.log(images_path)
+	//return;
 	let images_uri = await upload_many_img(images_path, path.dirname(md_data_path), get_work_space(md_data_path));
 	let images_map :{ [k: string]: string } = {}
 	images_path.forEach((value, index) => {
