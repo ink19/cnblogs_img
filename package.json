@@ -6,11 +6,18 @@
   "engines": {
     "vscode": "^1.52.0"
   },
+  "repository": {
+    "url": "https://github.com/ink19/cnblogs_img.git"
+  },
+  "publisher": "ink19",
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onCommand:cnblogs-img.login_test",
+    "onCommand:cnblogs-img.upload-from-context",
+    "onCommand:cnblogs-img.just-for-test",
+    "onCommand:cnblogs-img.replace-markdown"
   ],
   "main": "./out/extension.js",
   "contributes": {
