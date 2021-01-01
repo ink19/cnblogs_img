@@ -1,14 +1,22 @@
 import * as vscode from 'vscode';
+vscode.window.showInformationMessage("Test1");
 import * as fs from 'fs';
-import * as superagent from 'superagent';
+vscode.window.showInformationMessage("Test2");
+
+import * as superagent from "superagent";
+
+// const superagent = require('superagent');
+vscode.window.showInformationMessage("Test3");
 import * as path from 'path';
+vscode.window.showInformationMessage("Test4");
 import * as clipboardy from 'clipboardy';
-import { checkout } from 'superagent';
+
+vscode.window.showInformationMessage("Test5");
 
 let cnblogs_cookie_apsnetcore:string = "";
-let cnblogs_cookie_CNBlogsCookie:string = "";
-
 const regexp = /(?<=\!\[(([^\n\]]|(?<=\\).)*)\]\()((?:[^\)]|(?<=\\).)*)(?=\))/g;
+
+vscode.window.showInformationMessage("Test6");
 
 function get_work_space(ipath : string) {
 	let vsc_workspace = vscode.workspace.workspaceFolders;
@@ -61,7 +69,7 @@ async function upload_single_img(image_path: string, absolute_to_path: string, c
 	console.log("绝对路径～ " + file_absolute_path);
 	console.log("相对路径～ " + file_relative_path);
 	
-	let file_stat = fs.statSync(file_absolute_path)
+	let file_stat = fs.statSync(file_absolute_path);
 	if (cache.hasOwnProperty(file_relative_path) && file_stat.mtimeMs <= (<number>cache[file_relative_path]["upload_time"])) {
 		console.log("cache命中～ " + cache[file_relative_path]["url"])
 		return (cache[file_relative_path]["url"]);
@@ -78,9 +86,9 @@ async function upload_single_img(image_path: string, absolute_to_path: string, c
 
 async function upload_many_img(images_path : string[], work_space : string, absolute_to_path: string) {
 	let cache_path = work_space + "/cnblog_img.json";
-	let cache_obj = {}
+	let cache_obj = {};
 	if (fs.existsSync(cache_path)) {
-		cache_obj = JSON.parse(fs.readFileSync(cache_path).toString())
+		cache_obj = JSON.parse(fs.readFileSync(cache_path).toString());
 	} 
 
 	console.log("读取到缓存文件～ ");
@@ -102,7 +110,7 @@ function get_images_from_md(md_data: string) : string[] {
 
 function replace_images_in_md(md_data: string, images_map: { [k: string]: string }) {
 	let result2 = md_data.replace(regexp, (substring) => {
-		return images_map[substring]
+		return images_map[substring];
 	});
 	return result2;
 }
@@ -110,16 +118,16 @@ function replace_images_in_md(md_data: string, images_map: { [k: string]: string
 async function replace_images_from_md(md_data_path: string) {
 	let md_data = fs.readFileSync(md_data_path).toString();
 	let images_path = get_images_from_md(md_data);
-	let test_reg = /^(ht|f)tp(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%$#_]*)?$/
+	let test_reg = /^(ht|f)tp(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%$#_]*)?$/;
 	images_path = images_path.filter(ipath => {
-		return !test_reg.test(ipath)
+		return !test_reg.test(ipath);
 	});
 	//console.log(images_path)
 	//return;
 	let images_uri = await upload_many_img(images_path, path.dirname(md_data_path), get_work_space(md_data_path));
-	let images_map :{ [k: string]: string } = {}
+	let images_map :{ [k: string]: string } = {};
 	images_path.forEach((value, index) => {
-		images_map[value] = images_uri[index]
+		images_map[value] = images_uri[index];
 	});
 	let replaced_md_data = replace_images_in_md(md_data, images_map);
 	fs.writeFileSync(path.dirname(md_data_path) + "/replaced." + path.basename(md_data_path), replaced_md_data);
@@ -127,21 +135,22 @@ async function replace_images_from_md(md_data_path: string) {
 
 function test_login() {
 	let test_url = "https://upload.cnblogs.com/imageuploader/upload?host=www.cnblogs.com&editor=4#md-editor";
-	console.log(cnblogs_cookie_apsnetcore)
+	console.log(cnblogs_cookie_apsnetcore);
 	superagent.get(test_url).set("Cookie", ".Cnblogs.AspNetCore.Cookies=" + cnblogs_cookie_apsnetcore +";") .then((respone : superagent.Response) => {
-		console.log(respone)
+		console.log(respone);
 		if ((<string>respone.text).indexOf("未登录，请先") != -1) {
 			vscode.window.showErrorMessage("cnblogs的Cookie失效了～");
 		} else {
 			vscode.window.showInformationMessage("cnblogs已登陆~");
 		}
-	})
+	});
 }
+
 
 export function activate(context: vscode.ExtensionContext) {
 
-	console.log('Congratulations, your extension "cnblogs-img" is now active!');
-
+	// console.log('Congratulations, your extension "cnblogs-img" is now active!');
+	
 	let disposable = vscode.commands.registerCommand('cnblogs-img.login_test', () => {
 		get_cookie();
 		test_login();
@@ -186,12 +195,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 			replace_images_from_md(filepath);
 		} catch (error) {
-			console.log(error)
+			console.log(error);
 		}
 	});
-
+	
 	let test_commend = vscode.commands.registerCommand('cnblogs-img.just-for-test', () => {
-		console.log(vscode.workspace.workspaceFolders);
+		vscode.window.showInformationMessage("Test");
 	});
 
 	// 自动删除
