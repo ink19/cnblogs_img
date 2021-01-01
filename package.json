@@ -46,11 +46,6 @@
           "type": "string",
           "default": "",
           "description": "cnblogs的.Cnblogs.AspNetCore.Cookies字段"
-        },
-        "cnblogs.cookie.CNBlogsCookie": {
-          "type": "string",
-          "default": "",
-          "description": "cnblogs的.CNBlogsCookie字段"
         }
       }
     },

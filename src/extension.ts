@@ -22,7 +22,6 @@ function get_work_space(ipath : string) {
 function get_cookie() {
 	let configure = vscode.workspace.getConfiguration();
 	cnblogs_cookie_apsnetcore = configure["cnblogs"]["cookie"]['AspNetCore'];
-	cnblogs_cookie_CNBlogsCookie = configure["cnblogs"]["cookie"]['CNBlogsSession'];
 }
 
 async function upload_img(image_path : string) {
