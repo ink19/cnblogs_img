@@ -175,6 +175,8 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	let replace_md = vscode.commands.registerCommand('cnblogs-img.replace-markdown', (fileuri:vscode.Uri|undefined) => {
+		get_cookie();
+		test_login();
 		try {
 			let filepath = "";
 			if (fileuri == undefined) {
